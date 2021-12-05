@@ -11,5 +11,5 @@ for i in range(3, len(sonar)):
     answer2 += sonar[i] > readings[i % 3]
     readings[i % 3] = sonar[i]
 
-print("Part 1:", answer1)
-print("Part 2:", answer2)
+print('Part 1:', answer1)
+print('Part 2:', answer2)

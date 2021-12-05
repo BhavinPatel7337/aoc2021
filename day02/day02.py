@@ -16,5 +16,5 @@ for command in course:
         depth1 += int(value)
         aim += int(value)
 
-print("Part 1:", pos * depth1)
-print("Part 2:", pos * depth2)
+print('Part 1:', pos * depth1)
+print('Part 2:', pos * depth2)
