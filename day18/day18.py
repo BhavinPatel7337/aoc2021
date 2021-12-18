@@ -1,52 +1,48 @@
 from sys import path
 import re
-from math import ceil
 from functools import reduce
-from json import loads
 from itertools import permutations
 
 with open(path[0] + '/input.txt') as f:
     sf_numbers = f.read().splitlines()
 
-def explode(s, pos, pair_len):
-    pair = s[pos:pos + pair_len]
-    l, r = [int(x) for x in re.search('\[(\d+),(\d+)\]', pair).groups()]
-    s_l = s[:pos]
-    s_r = s[pos + pair_len:]
-    match_l = re.search('(\d+)([,\[\]]+)$', s_l)
-    if match_l:
-        s_l = s_l[:match_l.span()[0]] + str(int(match_l.group(1)) + l) + match_l.group(2)
-    match_r = re.search('\d+', s_r)
-    if match_r:
-        s_r = s_r[:match_r.span()[0]] + str(int(match_r.group()) + r) + s_r[match_r.span()[1]:]
-    return s_l + '0' + s_r
+def explode(s, pair, pair_start):
+    s_l, s_r = s[pair_start - 1::-1], s[pair_start + len(pair):]
+    v_l, v_r = [int(x) for x in re.search('\[(\d+),(\d+)\]', pair).groups()]
+    m_l, m_r = [re.search('\d+', x) for x in [s_l, s_r]]
+    if m_l:
+        s_l = s_l.replace(m_l.group(), str(int(m_l.group()[::-1]) + v_l)[::-1], 1)
+    if m_r:
+        s_r = s_r.replace(m_r.group(), str(int(m_r.group()) + v_r), 1)
+    return s_l[::-1] + '0' + s_r
 
-def shouldExplode(s):
+def should_explode(s):
     depth = 0
     i = 0
     while i < len(s):
         if s[i] == '[':
             if depth == 4:
-                pair_len = 0
+                pair = ''
                 while s[i] != ']':
-                    pair_len += 1
+                    pair += s[i]
                     i += 1
-                return True, i - pair_len, pair_len + 1
+                pair += s[i]
+                return pair, i - len(pair) + 1
             depth += 1
         elif s[i] == ']':
             depth -= 1
         i += 1
-    return False, None, None
+    return None
 
 def sf_reduce(s):
     while True:
-        e, pos, pair_len = shouldExplode(s)
+        e = should_explode(s)
         if e:
-            s = explode(s, pos, pair_len)
+            s = explode(s, *e)
             continue
         m = re.search('\d{2,}', s)
         if m:
-            new_pair = '[' + str(int(m.group()) // 2) + ',' + str(ceil(int(m.group()) / 2)) + ']'
+            new_pair = '[' + str(int(m.group()) // 2) + ',' + str((int(m.group()) + 1) // 2) + ']'
             s = s.replace(m.group(), new_pair, 1)
             continue
         break
@@ -55,16 +51,8 @@ def sf_reduce(s):
 def sf_add(a, b):
     return sf_reduce('[' + a + ',' + b + ']')
 
-def magnitude(x):
-    if isinstance(x, str):
-        x = loads(x)
-    if isinstance(x, int):
-        return x
-    if isinstance(x[0], list):
-        x[0] = magnitude(x[0])
-    if isinstance(x[1], list):
-        x[1] = magnitude(x[1])
-    return (3 * x[0]) + (2 * x[1])
+def magnitude(s):
+    return eval(s.replace('[', '(').replace(']', ')').replace(',', '*3+2*'))
 
 print('Part 1:', magnitude(reduce(sf_add, sf_numbers)))
 print('Part 2:', max([magnitude(sf_add(*p)) for p in permutations(sf_numbers, 2)]))
